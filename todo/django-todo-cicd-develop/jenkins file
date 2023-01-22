@@ -1,0 +1,24 @@
+pipeline {
+    agent any
+    stages {
+        stage("Build and Tag Image") {
+            steps {
+                sh 'docker build -t myimage:latest .'
+            }
+        }
+        stage("Push Image to Docker Hub") {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub_credentials', passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
+                    sh "docker login -u $USERNAME -p $PASSWORD"
+                    sh "docker push myrepo/myimage:latest"
+                }
+            }
+        }
+        stage("Deploy Image to Docker Container") {
+            steps {
+                sh 'docker pull myrepo/myimage:latest'
+                sh 'docker run -d --name mycontainer -p 8080:8080 myrepo/myimage:latest'
+            }
+        }
+    }
+}
